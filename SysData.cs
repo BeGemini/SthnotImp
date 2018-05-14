@@ -18,7 +18,7 @@ namespace CUST.Sys
         public const string MZ = "mzdm";//民族代码
         public const string MZWZ = "mzwzdm";//民族文字
         public const string WYYZ = "wyyzdm";//外语语种代码
-        public const string XB = "xbdm";//性别代码
+        public const string XB = "xbdm";//性别代码 
         public const string ZZMM = "zzmmdm";//政治面貌代码
         public const string ZJLXDM = "zjlxdm";
         public const string KSTZ = "kstzbz";//考生特征
