@@ -29,6 +29,10 @@ namespace CUST.Sys
         public const string FQLX = "fqlx";//父亲类型
         public const string ZW = "zw";//职位
         public const string KQZW = "kqzw";//考区职位
+
+        public const string ZYZD = "zyzd";//志愿字典
+        public const string ZYXX = "zyxx";//志愿学校
+        public const string ZYZY = "zyzy";//志愿专业
     }
     public struct Struct_ZYMC
     {
@@ -42,13 +46,13 @@ namespace CUST.Sys
     }
     public struct Struct_ZYZD
     {
-        public string zd;
+        public string bm;
         public string mc;
         public bool sfdk;
         public Struct_ZYZD(string zd1, string mc1, bool sfdk1)
         {
             zd1 = "";
-            zd = zd1;
+            bm = zd1;
             mc1 = "";
             mc = mc1;
             sfdk1 = false;
@@ -1341,7 +1345,7 @@ namespace CUST.Sys
             return (obj != null ? (Struct_ZD)obj : struct_ZD);
         }
 
-        public static List<ConfigModel> GetConfigs()
+        public static List<ConfigModel>GetConfigs()
         {
             List<ConfigModel> dic = new List<ConfigModel>();
             XmlDocument oXmlDocument = new XmlDocument();
@@ -1438,7 +1442,7 @@ namespace CUST.Sys
                     foreach (DataRow dr in ds.Tables[0].Rows)
                     {
                         zd = dr["ZY_ZD"].ToString();
-                        zyzd.zd = dr["ZY_ZD"].ToString();
+                        zyzd.bm = dr["ZY_ZD"].ToString();
                         zyzd.mc = dr["ZDMC"].ToString();
                         zyzd.sfdk = (dr["SFDK"].ToString() == "1") ? true : false;
                         ht.Add(zd, zyzd);
@@ -1482,6 +1486,7 @@ namespace CUST.Sys
         }
         private static Hashtable zyczzdpc1 = InitHashZYZDPC1();
         private static Hashtable zyczzdpc2 = InitTableZYZDPC2();
+
         public static Struct_ZYZD ZYZDByKey(string xqdm, string key)//根据键值,返回一个结构
         {
             object obj = new object();
@@ -1497,6 +1502,36 @@ namespace CUST.Sys
             obj = zyzd[key];
             return (obj != null ? (Struct_ZYZD)obj : new Struct_ZYZD());
         }
+        private static Hashtable InitTableZYZDPC1()//初始化志愿字段静态表--第一批次
+        {
+            lock (typeof(SysData))
+            {
+                Hashtable zyzd = new Hashtable();
+                string xqdm;
+                foreach (DataRow dr in dt_xqdm.Rows)
+                {
+                    xqdm = dr["V_DM"].ToString();
+                    zyzd.Add(xqdm, ShowZYZD(xqdm, 1).Tables[0]);
+                }
+                return zyzd;
+            }
+        }
+        private static Hashtable dt_zyzdpc1 = InitTableZYZDPC1();
+        private static Hashtable dt_zyzdpc2 = InitTableZYZDPC2();
+        public static DataTable ZYZD(string xqdm)
+        {
+            object obj = new object();
+            if (Convert.ToInt32(Config.pc) == 1)
+            {
+                obj = dt_zyzdpc1[xqdm];
+            }
+            else
+            {
+                obj = dt_zyzdpc2[xqdm];
+            }
+            return (obj != null ? (DataTable)obj : new DataTable());
+        }
+
         private static Hashtable InitHWZ()
         {
             lock (typeof(SysData))
@@ -1572,6 +1607,7 @@ namespace CUST.Sys
                 return ht_zymc;
             }
         }
+        private static Hashtable ht_zymc = InitZYMCHash();
         public static string ZYMCByKey(string strXQDM, string strWZ)
         {
             string strKey = strXQDM.Trim() + strWZ.Trim();
@@ -1670,7 +1706,6 @@ namespace CUST.Sys
                 }
             }
         }
-
         private static Hashtable InitTableZYZY()//初始化哈希表——键值对“县区——志愿专业静态表”
         {
             lock (typeof(SysData))
@@ -1753,245 +1788,36 @@ namespace CUST.Sys
             return (obj != null ? (Struct_ZY)obj : new Struct_ZY());
         }
         #endregion
-        private static DataTable ZYXX_SelectTCSJHK()
+
+
+        #region======考生志愿状态(蒲凤)=====
+        private static Hashtable InitZYZT()
         {
             lock (typeof(SysData))
             {
-                DBClass dbc = new DBClass();
-                try
-                {
-                    OracleParameter[] para ={
-                                             new OracleParameter("mycur",OracleType.Cursor)
-                                         };
-                    para[0].Direction = ParameterDirection.Output;
-                    return dbc.RunProcedure("PACK_WEB_ZYXX.Sys_SelectTCSJHK", para, "table").Tables[0];
-                }
-                finally
-                {
-                    dbc.Close();
-                }
+                Hashtable zyzt = new Hashtable();
+                zyzt.Add("0", "未保存");
+                zyzt.Add("1", "已保存");
+                zyzt.Add("2", "学校保存");
+                zyzt.Add("3", "学校提交");
+                zyzt.Add("4", "县区提交");
+                return zyzt;
             }
         }
-        private static DataTable _tcsjhk = ZYXX_SelectTCSJHK();
-        public static DataTable TCSJHK
+        private static Hashtable ht_zyzt = InitZYZT();
+        public static string ZYZTByKey(int key)
         {
-            get
-            {
-                return _tcsjhk;
-            }
+            object obj = ht_zyzt[key];
+            return (obj != null ? (string)obj : key.ToString());
+        }
+        private static DataTable dt_zyzt = FromHashTableToDataTable(ht_zyzt);
+        public static DataTable ZYZT()
+        {
+            return dt_zyzt;
         }
 
-        private static DataTable dt_bklb = InitZDData("kslbdm");
-        private static Hashtable bklb = FromZDDataTableToHashTable(dt_bklb);
-        public static Struct_ZD BKLBByKey(string key)//根据键值,返回一个结构
-        {
-            object obj = bklb[key];
-            return (obj != null ? (Struct_ZD)obj : new Struct_ZD());
-        }
-        private static DataTable dt_ZyzjZYMC = InitZDData("kstzbz");
-        public static DataTable ZYZJ_ZYMC()
-        {
-            return dt_ZyzjZYMC;
-        }
-        private static Hashtable zyzjzymc = FromZDDataTableToHashTable(dt_ZyzjZYMC);
-        public static Struct_ZD ZYZJ_ZYMCByKey(string key)//根据键值,返回一个结构
-        {
-            object obj = zyzjzymc[key];
-            return (obj != null ? (Struct_ZD)obj : new Struct_ZD());
-        }
+        #endregion
 
-        private static Hashtable ht_zymc = InitZYMCHash();
-        private static DataTable InitKSTZ()
-        {
-            DataTable dt = new DataTable();
-            dt = InitZDData("kstzbz");
-            //dt == null ? new DataTable() : dt;
-            DataRow dr = dt.NewRow();
-            dr["BM"] = "";
-            dr["ZDM"] = "kstzbz";
-            dr["MC"] = "无";
-            dt.Rows.Add(dr);
-            dt.AcceptChanges();
-            return dt;
-        }
-        private static DataTable dt_kstz = InitKSTZ();
-        private static Hashtable kstz = FromZDDataTableToHashTable(dt_kstz);
-        public static Struct_ZD KSTZByKey(string key)//根据键值,返回一个结构
-        {
-            object obj = kstz[key];
-            return (obj != null ? (Struct_ZD)obj : new Struct_ZD());
-        }
-
-        private static DataTable ShowZYXX(string xqdm, string wz, int pc)
-        {
-            lock (typeof(SysData))
-            {
-                DBClass dbc = new DBClass();
-                DataSet ds = new DataSet();
-                try
-                {
-                    OracleParameter[] parameter = {
-                                                  new OracleParameter("zy_xqdm",OracleType.VarChar),
-                                                  new OracleParameter("zy_wz",OracleType.VarChar),
-                                                  new OracleParameter("zy_pc",OracleType.Int32),
-                                                  new OracleParameter("mycur",OracleType.Cursor)
-                                              };
-                    parameter[0].Value = xqdm;
-                    parameter[1].Value = wz;
-                    parameter[2].Value = pc;
-                    parameter[3].Direction = ParameterDirection.Output;
-
-                    ds = dbc.RunProcedure("PACK_WEB_ZYXX.Sys_XQ_JHK_selectByXQXXLBWZPC", parameter, "table");
-                    return ds.Tables[0];
-                }
-                finally
-                {
-                    dbc.Close();
-                }
-            }
-        }
-        private static DataTable InitTableWZ()
-        {
-            lock (typeof(SysData))
-            {
-                OracleConnection con = new OracleConnection(Config.connectionString);
-                DataSet ds = new DataSet();
-                try
-                {
-                    con.Open();
-                    OracleCommand com = new OracleCommand(@"select distinct WZ from XQ_JHK order by wz", con);
-                    OracleDataAdapter da = new OracleDataAdapter(com);
-                    da.Fill(ds);
-                    return ds.Tables[0];
-                }
-                finally
-                {
-                    con.Close();
-                }
-            }
-        }
-        private static DataTable dt_wz = InitTableWZ();
-
-        private static Hashtable InitHashZYXXPC1()
-        {
-            lock (typeof(SysData))
-            {
-                Hashtable hashzyxx = new Hashtable();
-                foreach (DataRow dr in dt_xqdm.Rows)
-                {
-                    Hashtable hash_zyxx = new Hashtable();
-                    foreach (DataRow dw in dt_wz.Rows)
-                    {
-                        hash_zyxx.Add(dw["WZ"].ToString(), ShowZYXX(dr["V_DM"].ToString(), dw["WZ"].ToString(), 1));
-                    }
-                    hashzyxx.Add(dr["V_DM"].ToString(), hash_zyxx);
-                }
-                return hashzyxx;
-            }
-        }
-
-        private static Hashtable InitHashZYXXPC2()
-        {
-            lock (typeof(SysData))
-            {
-                Hashtable hashzyxx = new Hashtable();
-                foreach (DataRow dr in dt_xqdm.Rows)
-                {
-                    Hashtable hash_zyxx = new Hashtable();
-                    foreach (DataRow dw in dt_wz.Rows)
-                    {
-                        hash_zyxx.Add(dw["WZ"].ToString(), ShowZYXX(dr["V_DM"].ToString(), dw["WZ"].ToString(), 2));
-                    }
-                    hashzyxx.Add(dr["V_DM"].ToString(), hash_zyxx);
-                }
-                return hashzyxx;
-            }
-        }
-
-        private static Hashtable dt_zyxxtablepc1 = InitHashZYXXPC1();
-        private static Hashtable dt_zyxxtablepc2 = InitHashZYXXPC2();
-        public static DataTable ZYXXBYXQWZ(string xqdm, string wz, string strKslbdm)
-        {
-            object obj = new object();
-            if (Convert.ToInt32(Config.pc) == 1)
-            {
-                obj = dt_zyxxtablepc1[xqdm];
-            }
-            else
-            {
-                obj = dt_zyxxtablepc2[xqdm];
-            }
-            Hashtable hash_zyxx = (obj != null ? (Hashtable)obj : new Hashtable());
-            obj = hash_zyxx[wz];
-            // return (obj != null ? (DataTable)obj : new DataTable());
-            // 通过考生类别，过滤DataTable
-            if (obj != null)
-            {
-                DataTable dtTemp = (DataTable)obj;
-                // 表示“全部”
-                if (strKslbdm == "-1")
-                {
-                    return dtTemp;
-                }
-                else
-                {
-                    DataTable dtTempFinal = dtTemp.Clone();
-                    DataRow[] arrDrTemp = dtTemp.Select("kslb='" + strKslbdm + "'");
-                    foreach (DataRow drTemp in arrDrTemp)
-                    {
-                        dtTempFinal.Rows.Add(drTemp.ItemArray);
-                    }
-                    dtTempFinal.AcceptChanges();
-
-                    return dtTempFinal;
-                }
-            }
-            else
-            {
-                return new DataTable();
-            }
-        }
-        public static DataTable ZYXXBYXQWZ(string xqdm, string wz, int pc, string strKslbdm)
-        {
-            object obj = new object();
-            if (pc == 1)
-            {
-                obj = dt_zyxxtablepc1[xqdm];
-            }
-            else
-            {
-                obj = dt_zyxxtablepc2[xqdm];
-            }
-            Hashtable hash_zyxx = (obj != null ? (Hashtable)obj : new Hashtable());
-            obj = hash_zyxx[wz];
-            // return (obj != null ? (DataTable)obj : new DataTable());
-            // 通过考生类别，过滤DataTable
-            if (obj != null)
-            {
-                DataTable dtTemp = (DataTable)obj;
-                // 表示全部
-                if (strKslbdm == "-1")
-                {
-                    return dtTemp;
-                }
-                else
-                {
-                    DataTable dtTempFinal = dtTemp.Clone();
-                    DataRow[] arrDrTemp = dtTemp.Select("kslb='" + strKslbdm + "'");
-                    foreach (DataRow drTemp in arrDrTemp)
-                    {
-                        dtTempFinal.Rows.Add(drTemp.ItemArray);
-                    }
-                    dtTempFinal.AcceptChanges();
-
-                    return dtTempFinal;
-                }
-            }
-            else
-            {
-                return new DataTable();
-            }
-        }
     }
     public struct Struct_ZYXX
     {
